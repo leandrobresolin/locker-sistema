@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  web:
+    build: .
+    container_name: web
+    #command: bash -c "python3 -m django --version"
+    #command: bash -c "django-admin startproject unisal_locker ."
+    command: bash -c "pip3 install -r requirements.txt && python3 manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - .:/code
+    ports:
+      - 8000:8000
+ 
+  mqtt:
+    build: .
+    command: bash -c "pip3 install -r requirements.txt && python3 manage.py mqtt broker.hivemq.com 1883 && tail -f /dev/null"
+    container_name: mqtt
+    #tty: true 
+    volumes:
+      - .:/code
+    ports: 
+      - 1883:1883
+    depends_on:
+      - web
+
+  nodered:
+    container_name: node-red
+    image: nodered/node-red-docker
+    # volumes:
+    #   - ./node-red:/data
+    ports:
+      - 1880:1880
+       
+  postgres:
+    container_name: postgres
+    image: postgres:12
+    environment:
+      - POSTGRES_DB=locker
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - 5432:5432
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: pgadmin
+    ports:
+      - 5050:80
+    depends_on:
+      - postgres
+   
